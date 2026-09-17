@@ -1,11 +1,13 @@
 /* Why-256: prosa + tabla de especificaciones del byte */
 .byte-facts {
   margin-top: var(--space-2xl);
+  margin-inline: auto;
   border: var(--rule);
   border-radius: var(--radius-md);
   background: var(--color-paper-2);
   padding: var(--space-lg);
   max-width: 62ch;
+  text-align: center;
 }
 
 .byte-facts-title {
@@ -26,6 +28,7 @@
 .byte-facts td {
   padding: var(--space-xs) 0;
   border-top: var(--rule);
+  text-align: center;
 }
 
 .byte-facts tr:first-child td {
@@ -48,7 +51,6 @@
   font-family: var(--font-display);
   color: var(--color-accent);
   font-weight: 700;
-  text-align: right;
 }
 
 .byte-facts-caption {
