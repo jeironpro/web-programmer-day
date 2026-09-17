@@ -1,0 +1,91 @@
+/* ByteDemo: ocho bits que se encienden */
+.byte-hint {
+  font-size: var(--text-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+  margin-bottom: var(--space-xl);
+}
+
+.byte-row {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Cada bit: una celda tipo terminal */
+.bit {
+  flex: 1 1 0;
+  min-width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-md) var(--space-2xs);
+  border: var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--color-paper-2);
+  color: var(--color-ink-faint);
+  font-family: var(--font-display);
+  transition: transform var(--dur-short) var(--ease-out), background var(--dur-short) var(--ease-out),
+    color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out),
+    box-shadow var(--dur-short) var(--ease-out);
+}
+
+.bit-value {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bit-weight {
+  font-size: var(--text-xs);
+  opacity: 0.7;
+}
+
+/* Encendido: fósforo */
+.bit--on {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent-dim);
+  color: var(--color-accent);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px oklch(84% 0.19 148 / 0.18);
+}
+
+.bit:hover,
+.bit:focus-visible {
+  transform: translateY(-1px);
+}
+
+.bit:active {
+  transform: translateY(0);
+}
+
+/* Lectura del byte en vivo */
+.byte-readout {
+  margin-top: var(--space-lg);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.byte-readout strong {
+  color: var(--color-accent);
+  font-size: var(--text-xl);
+}
+
+.byte-cta {
+  margin-top: var(--space-2xl);
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
+}
+
+/* Móvil: bits en dos filas de cuatro */
+@media (max-width: 640px) {
+  .byte-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}

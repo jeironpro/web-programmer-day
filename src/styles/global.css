@@ -1,0 +1,172 @@
+/* Hallmark · genre: atmospheric · macrostructure: Stat-Led · theme: Terminal
+ * tone: terminal after-hours · anchor hue: 148 (phosphor)
+ * Importa tokens.css; todas las reglas referencian tokens por nombre. */
+
+/* ── Reset mínimo ─────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* overflow-x: clip en html+body (nunca hidden) — requisito móvil de hallmark */
+html,
+body {
+  overflow-x: clip;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: var(--color-paper-3) var(--color-paper);
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100dvh;
+}
+
+/* ── Fondo atmosférico: dos blooms fijos + scanlines sutiles ─────────────── */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    var(--bloom-1),
+    var(--bloom-2);
+  pointer-events: none;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.5;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    oklch(0% 0 0 / 0.12) 2px 4px
+  );
+}
+
+/* ── Tipografía base ─────────────────────────────────────────────────────── */
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+svg,
+canvas {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-paper);
+}
+
+/* ── Layout utilitario ───────────────────────────────────────────────────── */
+.shell {
+  width: min(1080px, 100% - 2 * var(--space-lg));
+  margin-inline: auto;
+}
+
+.section {
+  padding-block: var(--space-4xl);
+}
+
+/* Encabezado de sección apilado (tag encima, título debajo — nunca en columnas) */
+.section-head {
+  display: grid;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-2xl);
+}
+
+.eyebrow {
+  font-size: var(--text-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent-dim);
+}
+
+.section-title {
+  font-size: var(--text-3xl);
+  max-width: 22ch;
+}
+
+.prose {
+  display: grid;
+  gap: var(--space-lg);
+  max-width: 62ch;
+  color: var(--color-ink-muted);
+}
+
+.prose strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* ── Accesibilidad: anillo de foco visible, sin animación ────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 3px;
+}
+
+/* ── Reveal genérico (el estado final lo aplica GSAP) ────────────────────── */
+.reveal {
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  will-change: auto;
+}
+
+/* ── Reduced motion: todo colapsa a fundidos de ≤150ms ───────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 150ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 150ms !important;
+  }
+
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
