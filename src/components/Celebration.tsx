@@ -9,6 +9,7 @@ import type { JSX } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLang } from "@/i18n/LanguageContext";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useEventCallbackRef } from "@/hooks/useEventCallbackRef";
 import { isMuted, playCelebrationFanfare } from "@/lib/chiptune";
 import { SoundToggle } from "./SoundToggle";
 
@@ -58,18 +59,14 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
   const { t } = useLang();
   const reduced = usePrefersReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
-  const onFinishedRef = useRef(onFinished);
+  // Ref estable: la coreografía usa siempre la callback más reciente sin relanzarse.
+  const onFinishedRef = useEventCallbackRef(onFinished);
   const [showScene, setShowScene] = useState(false);
   const [sceneLive, setSceneLive] = useState(false);
   const [sceneFatal, setSceneFatal] = useState(false);
   const [choreoDone, setChoreoDone] = useState(false);
   // Estado de silencio para el botón (la preferencia vive en localStorage).
   const [muted, setMutedState] = useState<boolean>(() => isMuted());
-
-  // Mantenemos la callback más reciente sin relanzar la coreografía.
-  useEffect(() => {
-    onFinishedRef.current = onFinished;
-  }, [onFinished]);
 
   useEffect(() => {
     const root = rootRef.current;

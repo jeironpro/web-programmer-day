@@ -1,6 +1,5 @@
 // Nav N5 — floating pill: píldora flotante con blur sobre el lienzo oscuro.
 // En modo celebración la etiqueta "EN VIVO" pasa a "DÍA 256".
-import type { JSX } from "react";
 import { useLang } from "@/i18n/LanguageContext";
 import type { DayState } from "@/lib/day256";
 
@@ -39,6 +38,3 @@ export function Nav({ day }: NavProps) {
     </header>
   );
 }
-
-/** El nav se usa desde App; exportamos también el tipo para tests futuros. */
-export type { JSX };

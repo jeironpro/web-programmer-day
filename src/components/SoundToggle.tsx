@@ -2,7 +2,7 @@
 // y muestra el estado con un icono (altavoz on/off) + etiqueta aria clara.
 import type { JSX } from "react";
 import { useLang } from "@/i18n/LanguageContext";
-import { isMuted, scheduleNote, setMuted } from "@/lib/chiptune";
+import { scheduleNote, setMuted } from "@/lib/chiptune";
 
 interface SoundToggleProps {
   muted: boolean;
@@ -50,6 +50,3 @@ export function SoundToggle({ muted, onChange }: SoundToggleProps): JSX.Element 
     </button>
   );
 }
-
-/** Utilidad exportada para comprobar el estado inicial sin hook. */
-export const initialMutedState = isMuted;
