@@ -190,6 +190,27 @@
   border-color: var(--color-paper-3);
 }
 
+/* Pantallas cortas (móvil apaisado): compactamos el stack para que no recorte */
+@media (max-height: 560px) {
+  .celebration {
+    gap: var(--space-sm);
+  }
+
+  .cele-byte {
+    gap: 4px;
+  }
+
+  .cele-bit {
+    width: clamp(28px, 5vw, 40px);
+    height: clamp(34px, 6vw, 48px);
+    font-size: clamp(0.9rem, 3vw, 1.3rem);
+  }
+
+  .cele-title {
+    font-size: clamp(1.5rem, 4.5vw, 2.4rem);
+  }
+}
+
 /* Botón para cerrar la celebración y ver la página */
 .cele-dismiss {
   position: fixed;
