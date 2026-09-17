@@ -1,7 +1,9 @@
 // Celebration: el momento wow del día 256. Monta una superposición a pantalla
-// completa con el byte 3D (carga diferida con React.lazy) y coreografía GSAP.
-// Robustez: los estados iniciales viven en CSS, la línea de tiempo es simple y
-// un temporizador de seguridad garantiza el estado final pase lo que pase.
+// completa con el byte 3D permanente y coreografía GSAP para los textos.
+// El byte 3D SON los bits 01010101: ocho cubos con el dígito incrustado que
+// están en pantalla desde el primer fotograma y no desaparecen nunca. El byte
+// 2D del DOM es solo la reserva si WebGL no está disponible (se oculta cuando
+// el canvas 3D está vivo y solo reaparece si el contexto muere sin remedio).
 import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { JSX } from "react";
 import { gsap } from "@/lib/gsap";
@@ -58,7 +60,8 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
   const rootRef = useRef<HTMLDivElement>(null);
   const onFinishedRef = useRef(onFinished);
   const [showScene, setShowScene] = useState(false);
-  const [sceneFailed, setSceneFailed] = useState(false);
+  const [sceneLive, setSceneLive] = useState(false);
+  const [sceneFatal, setSceneFatal] = useState(false);
   const [choreoDone, setChoreoDone] = useState(false);
   // Estado de silencio para el botón (la preferencia vive en localStorage).
   const [muted, setMutedState] = useState<boolean>(() => isMuted());
@@ -98,7 +101,8 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
 
       tl // 1. El overlay se funde desde negro
         .fromTo(root, { opacity: 0 }, { opacity: 1, duration: 0.45, ease: "power1.out" })
-        // 2. Los ocho bits caen y se ensamblan en fila
+        // 2. Los ocho bits DOM caen y se ensamblan en fila (solo visibles si
+        //    WebGL no llega; con la escena 3D este byte queda oculto por CSS)
         .fromTo(
           ".cele-bit",
           { y: -140, opacity: 0, rotation: () => gsap.utils.random(-35, 35) },
@@ -111,7 +115,7 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
           { y: (i: number) => (i % 2 === 0 ? -10 : 10), duration: 0.22, ease: "power1.inOut", yoyo: true, repeat: 1 },
           "+=0.1",
         )
-        // 4. Pulso de encendido del byte completo
+        // 4. Pulso del contenedor del byte (inocuo si está oculto por el 3D)
         .fromTo(".cele-byte", { scale: 1 }, { scale: 1.05, duration: 0.2, ease: "power1.out", yoyo: true, repeat: 1 }, "-=0.05")
         // 5. Reveal del titular, el tag y el subtítulo
         .fromTo(
@@ -136,16 +140,13 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
     };
   }, [reduced]);
 
-  // La escena 3D se monta tras el ensamblado (no compite con la coreografía).
-  // Si no hay WebGL (o el contexto muere), el byte 2D ya cubre la celebración.
+  // El byte 3D se monta junto con la celebración y PERMANECE: el contenedor
+  // nunca se desmonta. Si no hay WebGL (o el contexto muere de forma fatal),
+  // el byte 2D del DOM toma el relevo.
   useEffect(() => {
-    if (reduced || !isWebGLAvailable()) {
-      setSceneFailed(true);
-      return;
-    }
-    const timer = window.setTimeout(() => setShowScene(true), 1_200);
-    return () => window.clearTimeout(timer);
-  }, [reduced]);
+    if (!isWebGLAvailable()) return;
+    setShowScene(true);
+  }, []);
 
   return (
     <div className="celebration" ref={rootRef} role="dialog" aria-label={t.celebration.title}>
@@ -156,17 +157,25 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
         ))}
       </div>
 
-      {/* Escena 3D de fondo: cubos de bits + partículas + parallax de cámara */}
-      {showScene && !sceneFailed && (
+      {/* Byte 3D: los bits 01010101 con el dígito incrustado en las caras.
+          Presente desde el primer fotograma de la celebración; nunca se
+          desmonta ni desaparece. */}
+      {showScene && (
         <div className="cele-scene" aria-hidden="true">
           <Suspense fallback={null}>
-            <ByteScene reduced={reduced} onContextLost={() => setSceneFailed(true)} />
+            <ByteScene
+              reduced={reduced}
+              onReady={() => setSceneLive(true)}
+              onFatal={() => setSceneFatal(true)}
+            />
           </Suspense>
         </div>
       )}
 
-      {/* Byte 2D que se ensambla con GSAP (funciona también sin WebGL) */}
-      <div className="cele-byte" aria-hidden="true">
+      {/* Byte 2D de reserva: solo protagonista si el 3D no puede estar.
+          Mientras la escena 3D vive, permanece oculto (visible para el
+          ensamblado GSAP y para lectores de pantalla, invisible en pantalla). */}
+      <div className={`cele-byte${sceneLive && !sceneFatal ? " cele-byte--hidden" : ""}`} aria-hidden="true">
         {Array.from({ length: 8 }, (_, i) => (
           <span key={i} className="cele-bit">
             {i % 2}
