@@ -13,6 +13,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import type { Group, Mesh, PerspectiveCamera } from "three";
 import { AdditiveBlending, CanvasTexture, SRGBColorSpace } from "three";
+import { useEventCallbackRef } from "@/hooks/useEventCallbackRef";
 
 /** Color del fósforo en sRGB (coincide con --color-accent). */
 const PHOSPHOR = "#55ff88";
@@ -229,10 +230,8 @@ function CameraFitter() {
 function ContextGuard({ onFatal }: { onFatal?: () => void }) {
   const gl = useThree((state) => state.gl);
   const [, bump] = useState(0);
-  const fatalRef = useRef(onFatal);
-  useEffect(() => {
-    fatalRef.current = onFatal;
-  }, [onFatal]);
+  // Ref estable: el listener nunca se re-registra si la callback cambia.
+  const onFatalRef = useEventCallbackRef(onFatal);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -241,14 +240,14 @@ function ContextGuard({ onFatal }: { onFatal?: () => void }) {
     let restoreTimer = 0;
     const armRestoreTimer = () => {
       window.clearTimeout(restoreTimer);
-      restoreTimer = window.setTimeout(() => fatalRef.current?.(), 1_500);
+      restoreTimer = window.setTimeout(() => onFatalRef.current?.(), 1_500);
     };
     const onLost = (event: Event) => {
       event.preventDefault(); // habilita la restauración del contexto
       // statusMessage "internal error" = pérdida fatal (GPU caída, sin
       // restauración posible). Una pérdida normal llega con mensaje vacío.
       if ((event as WebGLContextEvent).statusMessage === "internal error") {
-        fatalRef.current?.();
+        onFatalRef.current?.();
         return;
       }
       armRestoreTimer();
@@ -365,13 +364,10 @@ interface ByteSceneProps {
 }
 
 export default function ByteScene({ reduced, onReady, onFatal }: ByteSceneProps) {
-  // Las callbacks se guardan en refs para no recrear el Canvas.
-  const readyRef = useRef(onReady);
-  const fatalRef = useRef(onFatal);
-  useEffect(() => {
-    readyRef.current = onReady;
-    fatalRef.current = onFatal;
-  }, [onReady, onFatal]);
+  // Refs estables: evitan que el Canvas (y sus listeners) se recreen cuando
+  // las callbacks cambian de identidad en cada render.
+  const onReadyRef = useEventCallbackRef(onReady);
+  const onFatalRef = useEventCallbackRef(onFatal);
 
   return (
     <Canvas
@@ -379,7 +375,7 @@ export default function ByteScene({ reduced, onReady, onFatal }: ByteSceneProps)
       dpr={[1, 1.75]}
       frameloop={reduced ? "demand" : "always"}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
-      onCreated={() => readyRef.current?.()}
+      onCreated={() => onReadyRef.current?.()}
     >
       <ambientLight intensity={0.35} />
       {/* Luz de relleno alta: acompaña a la fila elevada y al encuadre lejano */}
@@ -388,7 +384,7 @@ export default function ByteScene({ reduced, onReady, onFatal }: ByteSceneProps)
       {!reduced && <BinaryField />}
       <CameraFitter />
       <CameraRig reduced={reduced} />
-      <ContextGuard onFatal={() => fatalRef.current?.()} />
+      <ContextGuard onFatal={() => onFatalRef.current?.()} />
     </Canvas>
   );
 }

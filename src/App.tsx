@@ -32,7 +32,7 @@ function Shell(): JSX.Element {
   // Título de la pestaña dinámico.
   useEffect(() => {
     document.title = day.celebrating
-      ? `🎉 ${DAY_NUMBER} — ${t.hero.celebratingTitle}`
+      ? `${DAY_NUMBER} — ${t.hero.celebratingTitle}`
       : `${DAY_NUMBER} · ${t.hero.countdownLabel}`;
   }, [day.celebrating, t]);
 

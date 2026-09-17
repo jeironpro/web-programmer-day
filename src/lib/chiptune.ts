@@ -170,10 +170,3 @@ export function playCelebrationFanfare(): number {
   const total = Math.max(...events.map((e) => e.time + e.duration));
   return total;
 }
-
-/** Cierra el contexto de audio (útil en tests y al desmontar la app). */
-export function closeAudioContext(): void {
-  void ctx?.close();
-  ctx = null;
-  master = null;
-}

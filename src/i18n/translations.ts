@@ -18,8 +18,6 @@ const es = {
   },
   hero: {
     countEyebrow: "cuenta atrás",
-    dayPrefix: "día",
-    todayLabel: "hoy",
     celebratingTitle: "Feliz Día del Programador",
     celebratingSub: "Hoy el año llega a su byte 256. 2⁸ = 256. Un byte completo de tiempo.",
     countdownLabel: "para el día 256",
@@ -61,12 +59,9 @@ const es = {
   },
   celebration: {
     title: "¡Feliz Día del Programador!",
-    byteTag: "byte del día",
     assemble: "ensamblando el byte…",
-    interleave: "intercalando bits…",
     reveal: "256 — 2⁸",
     dismiss: "ver la página",
-    confettiAria: "Confeti de dígitos binarios cayendo por la pantalla",
   },
   sound: {
     mute: "Silenciar fanfarria",
@@ -90,8 +85,6 @@ const en: typeof es = {
   },
   hero: {
     countEyebrow: "countdown",
-    dayPrefix: "day",
-    todayLabel: "today",
     celebratingTitle: "Happy Programmer's Day",
     celebratingSub: "Today the year reaches its 256th byte. 2⁸ = 256. A full byte of time.",
     countdownLabel: "until day 256",
@@ -133,12 +126,9 @@ const en: typeof es = {
   },
   celebration: {
     title: "Happy Programmer's Day!",
-    byteTag: "byte of the day",
     assemble: "assembling the byte…",
-    interleave: "interleaving bits…",
     reveal: "256 — 2⁸",
     dismiss: "view the page",
-    confettiAria: "Binary digit confetti falling across the screen",
   },
   sound: {
     mute: "Mute fanfare",

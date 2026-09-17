@@ -29,11 +29,6 @@ export function dayOfYear(date: Date): number {
   return Math.floor((current - start) / MS_PER_DAY) + 1;
 }
 
-/** Fecha de la medianoche local del 1 de enero del año de `date`. */
-export function startOfYear(date: Date): Date {
-  return new Date(date.getFullYear(), 0, 1);
-}
-
 /** Medianoche local del día 256 del año dado (12-sep en bisiestos, 13-sep el resto). */
 export function day256StartOfYear(year: number): Date {
   return new Date(year, 0, DAY_NUMBER);
@@ -51,12 +46,6 @@ export function nextDay256Start(now: Date): Date {
   const notYetPassed = now.getTime() < thisYear.getTime() + MS_PER_DAY;
   if (notYetPassed) return thisYear;
   return day256StartOfYear(now.getFullYear() + 1);
-}
-
-/** Milisegundos restantes hasta la medianoche local siguiente (fin del día actual). */
-export function msUntilMidnight(now: Date): number {
-  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  return nextMidnight.getTime() - now.getTime();
 }
 
 export interface DayState {
