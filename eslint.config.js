@@ -3,7 +3,7 @@ import tseslint from "typescript-eslint";
 
 // ESLint plano (v9): recomendaciones de JS + TS sin reglas con opiniones
 export default tseslint.config(
-  { ignores: ["dist/", "node_modules/", ".yarn/"] },
+  { ignores: ["dist/", "node_modules/", ".yarn/", ".vite/"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
