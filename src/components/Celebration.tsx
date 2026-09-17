@@ -7,6 +7,8 @@ import type { JSX } from "react";
 import { gsap } from "@/lib/gsap";
 import { useLang } from "@/i18n/LanguageContext";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { isMuted, playCelebrationFanfare } from "@/lib/chiptune";
+import { SoundToggle } from "./SoundToggle";
 
 // El bundle 3D (three + fiber + drei) solo se descarga el día 256.
 const ByteScene = lazy(() => import("./ByteScene"));
@@ -58,6 +60,8 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
   const [showScene, setShowScene] = useState(false);
   const [sceneFailed, setSceneFailed] = useState(false);
   const [choreoDone, setChoreoDone] = useState(false);
+  // Estado de silencio para el botón (la preferencia vive en localStorage).
+  const [muted, setMutedState] = useState<boolean>(() => isMuted());
 
   // Mantenemos la callback más reciente sin relanzar la coreografía.
   useEffect(() => {
@@ -118,6 +122,10 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
         );
     }, root);
 
+    // La fanfarria arranca con el ensamblado del byte. Los navegadores exigen
+    // un gesto previo para el audio; si no lo hay, simplemente no suena.
+    playCelebrationFanfare();
+
     // Red de seguridad: si la línea de tiempo no llega al final (p. ej. por
     // bloqueos del hilo principal), forzamos el estado final a los 3.2s.
     const safety = window.setTimeout(finish, 3_200);
@@ -169,6 +177,9 @@ export function Celebration({ onFinished }: CelebrationProps): JSX.Element {
       <h2 className="cele-title">{t.celebration.title}</h2>
       <p className="cele-tag">{t.celebration.reveal}</p>
       <p className="cele-sub">{choreoDone ? t.hero.celebratingSub : t.celebration.assemble}</p>
+
+      {/* Fanfarria: botón de silencio persistente */}
+      <SoundToggle muted={muted} onChange={setMutedState} />
     </div>
   );
 }

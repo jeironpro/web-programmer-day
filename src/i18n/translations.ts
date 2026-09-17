@@ -68,6 +68,12 @@ const es = {
     dismiss: "ver la página",
     confettiAria: "Confeti de dígitos binarios cayendo por la pantalla",
   },
+  sound: {
+    mute: "Silenciar fanfarria",
+    unmute: "Activar fanfarria",
+    on: "sonido",
+    off: "silencio",
+  },
 };
 
 // La misma forma, en inglés.
@@ -133,6 +139,12 @@ const en: typeof es = {
     reveal: "256 — 2⁸",
     dismiss: "view the page",
     confettiAria: "Binary digit confetti falling across the screen",
+  },
+  sound: {
+    mute: "Mute fanfare",
+    unmute: "Unmute fanfare",
+    on: "sound",
+    off: "muted",
   },
 };
 
