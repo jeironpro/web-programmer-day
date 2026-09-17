@@ -1,0 +1,55 @@
+/* ParallaxBackground: capas fijas de fondo. Todo el movimiento es
+ * transform/opacity vía GSAP; aquí solo se define la geometría. */
+.parallax-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: clip;
+  pointer-events: none;
+}
+
+/* Capa 1 — glow fósforo lejano */
+.bg-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(
+    ellipse 55% 40% at 50% 28%,
+    oklch(28% 0.08 148 / 0.35),
+    transparent 65%
+  );
+  will-change: transform;
+}
+
+/* Capa 2 — constelación */
+.bg-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+/* Capa 3 — niebla de código */
+.bg-fog {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+.fog-line {
+  position: absolute;
+  left: -4%;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  color: var(--color-ink-faint);
+  opacity: 0.16;
+  /* Desplazamiento horizontal determinista para que no se amontonen a la izquierda */
+  --fog-x: calc((var(--fog-i, 0) * 9.7) % 70);
+  transform: translateX(calc(var(--fog-x) * 1%));
+}
+
+.fog-line:nth-child(odd) {
+  opacity: 0.1;
+  font-size: var(--text-xs);
+}

@@ -1,0 +1,41 @@
+# Dependencias y artefactos
+node_modules/
+dist/
+coverage/
+
+# Yarn 4 (con nodeLinker: node-modules el cache vive en el global)
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Entornos locales
+.env
+.env.*
+!.env.example
+
+# Editores y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cache local de Vite
+.vite/
+
+# Artefactos de tsc --build
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
+# Metadatos locales del editor/agente (no deben llegar al remoto)
+.freebuff/

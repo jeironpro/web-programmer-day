@@ -1,0 +1,39 @@
+/* Footer Ft5 — statement: una frase que cierra la página */
+.footer {
+  border-top: var(--rule);
+  padding-block: var(--space-3xl);
+  margin-top: var(--space-3xl);
+}
+
+.footer-inner {
+  display: grid;
+  gap: var(--space-md);
+  justify-items: start;
+}
+
+.footer-statement {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  max-width: 30ch;
+  line-height: 1.25;
+}
+
+.footer-sub {
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
+}
+
+.footer-lang {
+  justify-self: start;
+  font-size: var(--text-xs);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  border-bottom: var(--rule-strong);
+  padding-bottom: 2px;
+  transition: color var(--dur-short) var(--ease-out);
+}
+
+.footer-lang:hover {
+  color: var(--color-accent);
+}

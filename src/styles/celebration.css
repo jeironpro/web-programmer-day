@@ -1,0 +1,182 @@
+/* Celebration: overlay del día 256 */
+.celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  text-align: center;
+  background: oklch(9% 0.018 240 / 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: clip;
+  padding: var(--space-lg);
+}
+
+/* Escena 3D como capa de fondo del overlay */
+.cele-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.cele-scene canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* El byte 2D que se ensambla */
+.cele-byte {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.cele-bit {
+  display: grid;
+  place-items: center;
+  width: clamp(38px, 7vw, 64px);
+  height: clamp(46px, 8vw, 76px);
+  border: 1px solid var(--color-accent-dim);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  font-family: var(--font-display);
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  font-weight: 700;
+  text-shadow: 0 0 12px oklch(84% 0.19 148 / 0.6);
+  will-change: transform;
+}
+
+/* Textos: arrancan ocultos (GSAP los revela); con reduced-motion se ven */
+.cele-title {
+  position: relative;
+  z-index: 1;
+  font-size: var(--text-display-s);
+  letter-spacing: -0.03em;
+  opacity: 0;
+}
+
+.cele-tag {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--color-accent);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0;
+}
+
+.cele-sub {
+  position: relative;
+  z-index: 1;
+  max-width: 46ch;
+  color: var(--color-ink-muted);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cele-title,
+  .cele-tag,
+  .cele-sub {
+    opacity: 1;
+  }
+}
+
+/* Estado final garantizado por CSS: cuando la coreografía termina (o la red
+ * de seguridad salta), los textos son visibles pase lo que pase con GSAP. */
+.celebration.cele-done .cele-title,
+.celebration.cele-done .cele-tag,
+.celebration.cele-done .cele-sub {
+  opacity: 1;
+  transform: none;
+}
+
+.celebration.cele-done .cele-bit {
+  opacity: 1;
+  transform: none;
+}
+
+/* Confeti binario: 0s y 1s cayendo con vaivén */
+.confetti {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.confetti-bit {
+  position: absolute;
+  top: -6%;
+  font-family: var(--font-display);
+  color: var(--color-accent-dim);
+  opacity: 0;
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(52vh) translateX(2vw) rotate(180deg);
+  }
+  92% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(110vh) translateX(-2vw) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: overlay sereno sin caída ni vaivén */
+@media (prefers-reduced-motion: reduce) {
+  .confetti-bit {
+    animation: none;
+    opacity: 0.25;
+    transform: none;
+  }
+
+  .cele-bit {
+    text-shadow: none;
+  }
+}
+
+/* Botón para cerrar la celebración y ver la página */
+.cele-dismiss {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 120;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  letter-spacing: 0.1em;
+  color: var(--color-paper);
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  padding: var(--space-xs) var(--space-lg);
+  box-shadow: 0 8px 32px oklch(84% 0.19 148 / 0.3);
+  transition: transform var(--dur-short) var(--ease-out), filter var(--dur-short) var(--ease-out);
+}
+
+.cele-dismiss:hover {
+  transform: translateX(-50%) translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.cele-dismiss:active {
+  transform: translateX(-50%);
+}
