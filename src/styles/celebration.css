@@ -28,6 +28,11 @@
   height: 100% !important;
 }
 
+/* El byte 2D de reserva: se oculta mientras la escena 3D está viva */
+.cele-byte--hidden {
+  visibility: hidden;
+}
+
 /* El byte 2D que se ensambla */
 .cele-byte {
   position: relative;
