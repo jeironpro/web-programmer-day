@@ -6,13 +6,22 @@
 //   primer fotograma) y sin desmontado. Si el contexto WebGL se pierde se
 //   intenta restaurar; solo si muere de forma fatal se avisa a Celebration
 //   (onFatal) para que el byte 2D del DOM tome el relevo.
-// - Campo de partículas binarias con Drei y parallax de cámara con el puntero
-//   (reduced-motion: cámara quieta, render bajo demanda, sin partículas).
-import { useEffect, useMemo, useRef, useState } from "react";
+// - Campo de partículas binarias como UN InstancedMesh por dígito (2 draw
+//   calls en total) con textura canvas compartida, en lugar de mallas de
+//   texto SDF (caras de compilar y de renderizar en GL por software).
+// - Parallax de cámara con el puntero (reduced-motion: cámara quieta, render
+//   bajo demanda, sin campo).
+import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Text } from "@react-three/drei";
-import type { Group, Mesh, PerspectiveCamera } from "three";
-import { AdditiveBlending, CanvasTexture, SRGBColorSpace } from "three";
+import type { Group, InstancedMesh, Mesh, PerspectiveCamera } from "three";
+import {
+  AdditiveBlending,
+  CanvasTexture,
+  DoubleSide,
+  NormalBlending,
+  Object3D,
+  SRGBColorSpace,
+} from "three";
 import { useEventCallbackRef } from "@/hooks/useEventCallbackRef";
 
 /** Color del fósforo en sRGB (coincide con --color-accent). */
@@ -23,8 +32,8 @@ const PHOSPHOR_DIM = "#1c5f38";
 const ROW_WIDTH = 7.4;
 /** Margen horizontal de encuadre alrededor de la fila. */
 const FRAME_MARGIN = 0.9;
-/** Altura mundial del byte: lo coloca en el tercio superior, sobre el titular. */
-const BYTE_Y = 2.1;
+/** Altura mundial del byte: lo coloca en el tercio superior, sin pisar el titular. */
+const BYTE_Y = 2.8;
 /** Distancia mínima de cámara (composición en pantallas anchas). */
 const MIN_CAMERA_Z = 9;
 
@@ -123,6 +132,41 @@ function getFaceTextures(digit: string): FaceTextures {
   const entry = { map: mapTex, emissive: emissiveTex };
   faceTextureCache.set(digit, entry);
   return entry;
+}
+
+// ── Textura plana del dígito (para el campo instanciado) ────────────────────
+
+/** Cache de texturas planas de dígitos para el campo binario. */
+const spriteTextureCache = new Map<string, CanvasTexture>();
+
+/**
+ * Textura plana (fondo transparente) del dígito para las partículas:
+ * halo suave + núcleo claro. Mucho más barata que el texto SDF de troika.
+ */
+function getSpriteTexture(digit: string): CanvasTexture {
+  const cached = spriteTextureCache.get(digit);
+  if (cached) return cached;
+
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `bold 92px "JetBrains Mono Variable", monospace`;
+  ctx.shadowColor = PHOSPHOR;
+  ctx.shadowBlur = 16;
+  ctx.fillStyle = PHOSPHOR_DIM;
+  ctx.fillText(digit, size / 2, size / 2 + 4);
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = PHOSPHOR;
+  ctx.fillText(digit, size / 2, size / 2 + 4);
+
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  spriteTextureCache.set(digit, tex);
+  return tex;
 }
 
 /**
@@ -229,7 +273,6 @@ function CameraFitter() {
  */
 function ContextGuard({ onFatal }: { onFatal?: () => void }) {
   const gl = useThree((state) => state.gl);
-  const [, bump] = useState(0);
   // Ref estable: el listener nunca se re-registra si la callback cambia.
   const onFatalRef = useEventCallbackRef(onFatal);
 
@@ -251,12 +294,8 @@ function ContextGuard({ onFatal }: { onFatal?: () => void }) {
         return;
       }
       armRestoreTimer();
-      bump((n) => n + 1);
     };
-    const onRestored = () => {
-      window.clearTimeout(restoreTimer);
-      bump((n) => n + 1);
-    };
+    const onRestored = () => window.clearTimeout(restoreTimer);
     canvas.addEventListener("webglcontextlost", onLost);
     canvas.addEventListener("webglcontextrestored", onRestored);
     return () => {
@@ -307,51 +346,93 @@ function CameraRig({ reduced }: { reduced: boolean }) {
   return null;
 }
 
-/** Campo de dígitos binarios flotando en profundidad. */
-function BinaryField({ count = 44 }: { count?: number }) {
-  const groupRef = useRef<Group>(null);
+// ── Campo binario instanciado ───────────────────────────────────────────────
 
-  // Posiciones deterministas (mismas en cada render para evitar parpadeos).
-  const particles = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => ({
-        digit: i % 2 === 0 ? "0" : "1",
-        pos: [
-          ((i * 61.8) % 40) - 20,
-          ((i * 37.7) % 24) - 12,
-          -4 - ((i * 13.3) % 16),
-        ] as [number, number, number],
-        size: 0.32 + ((i * 7) % 5) * 0.07,
-      })),
-    [count],
+/** Un dígito flotante: posición base, velocidad de deriva y escala. */
+interface FieldParticle {
+  x: number;
+  baseY: number;
+  z: number;
+  speed: number;
+  scale: number;
+}
+
+/**
+ * Posiciones deterministas: mismas en cada render, sin parpadeos.
+ * Distribuidas en un prisma ancho y profundo alrededor de la escena.
+ */
+function buildParticles(count: number): FieldParticle[] {
+  return Array.from({ length: count }, (_, i) => ({
+    x: ((i * 61.8) % 40) - 20,
+    baseY: ((i * 37.7) % 24) - 12,
+    z: -4 - ((i * 13.3) % 16),
+    speed: 0.25 + (i % 5) * 0.05,
+    scale: 0.32 + ((i * 7) % 5) * 0.07,
+  }));
+}
+
+/**
+ * Campo de dígitos binarios: un InstancedMesh por dígito (2 draw calls en
+ * total). Planos con la textura canvas compartida, siempre mirando a cámara
+ * (el plano es double-sided y la cámara apenas orbita: se leen bien).
+ */
+function BinaryField({ count = 48 }: { count?: number }) {
+  const particles = useMemo(() => buildParticles(count), [count]);
+  // Mitad "0", mitad "1": cada dígito es una capa instanciada.
+  const zeros = useMemo(() => particles.filter((_, i) => i % 2 === 0), [particles]);
+  const ones = useMemo(() => particles.filter((_, i) => i % 2 === 1), [particles]);
+
+  return (
+    <>
+      <BinaryFieldLayer digits={zeros} texture={getSpriteTexture("0")} />
+      <BinaryFieldLayer digits={ones} texture={getSpriteTexture("1")} />
+    </>
   );
+}
+
+/** Una capa del campo: un InstancedMesh con todos los planos de un dígito. */
+function BinaryFieldLayer({
+  digits,
+  texture,
+}: {
+  digits: FieldParticle[];
+  texture: CanvasTexture;
+}) {
+  const meshRef = useRef<InstancedMesh>(null);
+  // Objeto auxiliar compartido para componer las matrices de instancia.
+  const dummy = useMemo(() => new Object3D(), []);
 
   useFrame(({ clock }) => {
-    const group = groupRef.current;
-    if (!group) return;
+    const mesh = meshRef.current;
+    if (!mesh) return;
     const t = clock.getElapsedTime();
-    // Deriva ascendente lenta: la "lluvia" binaria asciende como motas.
-    group.children.forEach((child, i) => {
-      child.position.y = particles[i].pos[1] + ((t * (0.25 + (i % 5) * 0.05)) % 24) - 12;
+    // Deriva ascendente: cada instancia recorre su columna y se recicla abajo.
+    digits.forEach((p, i) => {
+      const y = ((p.baseY + 12 + t * p.speed) % 24) - 12;
+      dummy.position.set(p.x, y, p.z);
+      dummy.scale.setScalar(p.scale);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(i, dummy.matrix);
     });
+    mesh.instanceMatrix.needsUpdate = true;
   });
 
   return (
-    <group ref={groupRef}>
-      {particles.map((p, i) => (
-        <Text
-          key={i}
-          position={p.pos}
-          fontSize={p.size}
-          color={i % 4 === 0 ? PHOSPHOR : PHOSPHOR_DIM}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0}
-        >
-          {p.digit}
-        </Text>
-      ))}
-    </group>
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, digits.length]}
+      frustumCulled={false}
+    >
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        depthWrite={false}
+        side={DoubleSide}
+        blending={NormalBlending}
+      />
+    </instancedMesh>
   );
 }
 
