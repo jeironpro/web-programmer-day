@@ -8,12 +8,21 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
-import type { Group, Mesh } from "three";
+import type { Group, Mesh, PerspectiveCamera } from "three";
 import { AdditiveBlending } from "three";
 
 /** Color del fósforo en sRGB (coincide con --color-accent). */
 const PHOSPHOR = "#55ff88";
 const PHOSPHOR_DIM = "#1c5f38";
+
+/** Ancho total de la fila de cubos (8 cubos de 0.82 + separaciones). */
+const ROW_WIDTH = 7.4;
+/** Margen horizontal de encuadre alrededor de la fila. */
+const FRAME_MARGIN = 0.9;
+/** Altura mundial del byte: lo coloca en el tercio superior, sobre el titular. */
+const BYTE_Y = 2.1;
+/** Distancia mínima de cámara (composición en pantallas anchas). */
+const MIN_CAMERA_Z = 9;
 
 /** Un cubo bit: emite cuando está encendido. */
 function BitCube({ position, on, index }: { position: [number, number, number]; on: boolean; index: number }) {
@@ -93,11 +102,10 @@ function BinaryField({ count = 44 }: { count?: number }) {
   );
 }
 
-/** La fila de 8 bits: 01010100 -> "256" en espíritu; se encienden por índice. */
+/** La fila de 8 bits, elevada sobre el titular y con balanceo orbital. */
 function ByteRow() {
   const groupRef = useRef<Group>(null);
-  // El byte del día: 1 1 1 1 1 1 1 1 encendido completo es "255";
-  // representamos 256 con el noveno conceptual: 8 bits + glow central.
+  // Los ocho bits encendidos: el byte del día al completo.
   const pattern = [1, 1, 1, 1, 1, 1, 1, 1];
 
   useFrame(({ clock }) => {
@@ -108,7 +116,7 @@ function ByteRow() {
   });
 
   return (
-    <group ref={groupRef}>
+    <group ref={groupRef} position={[0, BYTE_Y, 0]}>
       {pattern.map((on, i) => (
         <BitCube
           key={i}
@@ -124,6 +132,27 @@ function ByteRow() {
       </mesh>
     </group>
   );
+}
+
+/**
+ * Encuadre reactivo: ajusta la distancia de la cámara para que la fila de
+ * cubos quepa completa en el ancho visible, sea cual sea el aspecto del
+ * viewport (en vertical la cámara se aleja; en horizontal mantiene el mínimo).
+ */
+function CameraFitter() {
+  const camera = useThree((state) => state.camera) as PerspectiveCamera;
+  const size = useThree((state) => state.size);
+
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    const halfFov = (camera.fov * Math.PI) / 180 / 2;
+    // Semiancho visible a distancia z: z * tan(fov/2) * aspect.
+    // Despejamos z para que quepa media fila + margen.
+    const halfRow = ROW_WIDTH / 2 + FRAME_MARGIN;
+    camera.position.z = Math.max(MIN_CAMERA_Z, halfRow / (Math.tan(halfFov) * aspect));
+  }, [camera, size.width, size.height]);
+
+  return null;
 }
 
 /** Parallax de cámara con el puntero (lerp) + pausa cuando no hay visibilidad. */
@@ -167,7 +196,8 @@ function CameraRig({ reduced, onContextLost }: { reduced: boolean; onContextLost
     const k = 1 - Math.pow(0.001, delta); // lerp independiente del framerate
     camera.position.x += (target.current.x - camera.position.x) * k;
     camera.position.y += (target.current.y - camera.position.y) * k;
-    camera.lookAt(0, 0, 0);
+    // Miramos ligeramente por encima del centro: byte arriba, texto al centro.
+    camera.lookAt(0, 0.6, 0);
   });
 
   return null;
@@ -195,9 +225,11 @@ export default function ByteScene({ reduced, onContextLost }: ByteSceneProps) {
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
     >
       <ambientLight intensity={0.35} />
-      <pointLight position={[0, 4, 6]} intensity={30} color={PHOSPHOR} />
+      {/* Luz de relleno alta: acompaña a la fila elevada y al encuadre lejano */}
+      <pointLight position={[0, 6, 10]} intensity={60} color={PHOSPHOR} />
       <ByteRow />
       {!reduced && <BinaryField />}
+      <CameraFitter />
       <CameraRig reduced={reduced} onContextLost={() => lostRef.current?.()} />
     </Canvas>
   );
